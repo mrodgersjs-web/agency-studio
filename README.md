@@ -4,25 +4,22 @@
 
 ## Employer summary
 
-Shows how an FDE staffs an AI-augmented delivery team without turning every agent into a god-object. Each role has a boundary, trigger, and proof expectation.
+Staff AI work without god-objects. Each role owns one purpose; **Builder ≠ Verifier**.
 
-## Roles (starter roster)
-
-| Role | Owns | Does not own |
-|---|---|---|
-| Scout | codebase reconnaissance | writing production code |
-| Planner | specs and plans | silent scope expansion |
-| Builder | implementation | self-certifying done |
-| Reviewer | standards/quality | rewriting without evidence |
-| Verifier | deterministic gates | design opinions |
-| Documenter | operator docs | changing runtime behavior |
-
-## 60-second path
+## Proof in 60 seconds
 
 ```bash
-# read role contracts
-sed -n '1,80p' roles/verifier.md
+git clone https://github.com/mrodgersjs-web/agency-studio.git
+cd agency-studio
+bash scripts/smoke.sh
+sed -n '1,40p' roles/verifier.md
 ```
 
+## Roles
+Scout · Planner · Builder · Reviewer · Verifier · Documenter — see `roles/`.
+
 ## Public boundary
-No client rosters, CRM data, or private agency monorepo dumps. See docs/public-boundary.md.
+See [docs/public-boundary.md](docs/public-boundary.md).
+
+## Related
+- [jake-studio](https://github.com/mrodgersjs-web/jake-studio) · [doctrine](https://github.com/mrodgersjs-web/doctrine) · [proof-studio](https://github.com/mrodgersjs-web/proof-studio)
