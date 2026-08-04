@@ -23,3 +23,40 @@ See [docs/public-boundary.md](docs/public-boundary.md).
 
 ## Related
 - [jake-studio](https://github.com/mrodgersjs-web/jake-studio) · [doctrine](https://github.com/mrodgersjs-web/doctrine) · [proof-studio](https://github.com/mrodgersjs-web/proof-studio)
+
+
+---
+
+## FDE bar (this studio)
+
+| Practice | Here |
+| --- | --- |
+| Employer summary | top of README |
+| 60s / smoke proof | {
+  "checks": {
+    "registry_populated": true,
+    "subsystem_count": 17,
+    "version_ok": true
+  },
+  "ok": true,
+  "result": "PASS",
+  "rig_master": "1.0.0",
+  "verb": "smoke"
+}
+mesh-studio smoke PASS |
+| Public boundary |  |
+| Claim under test | '"role contracts present"' |
+| Related fleet | [profile](https://github.com/mrodgersjs-web) · [resume](https://github.com/mrodgersjs-web/resume) · [patents teaser](https://github.com/mrodgersjs-web/patents) |
+
+If {
+  "checks": {
+    "registry_populated": true,
+    "subsystem_count": 17,
+    "version_ok": true
+  },
+  "ok": true,
+  "result": "PASS",
+  "rig_master": "1.0.0",
+  "verb": "smoke"
+}
+mesh-studio smoke PASS fails, the README claim is considered false until fixed.
