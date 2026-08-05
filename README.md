@@ -1,6 +1,8 @@
 # agency-studio
 
 > Department-shaped agent teams with hard boundaries — specialization, ownership, and handoff contracts.
+**Outcome:** Smoke reports `"result": "PASS"` with `"ok": true`, `subsystem_count: 17`, `registry_populated: true`, `version_ok: true` across 6 defined roles.
+
 
 ## Employer summary
 
