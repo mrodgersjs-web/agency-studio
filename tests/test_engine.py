@@ -1,6 +1,7 @@
 """Each rejection rule must fire; the sound run must pass."""
 
 import json
+import shlex
 import shutil
 import sys
 from pathlib import Path
@@ -111,6 +112,62 @@ def test_boundary_malformed_action(tmp_path):
     task = inline()
     task["builder"]["report"]["actions"].append({"type": "teleport", "target": "x"})
     assert BOUNDARY in rules(run_task(task, CONTRACTS, tmp_path))
+
+
+
+
+def test_disallowed_builder_phase_command_does_not_execute(tmp_path):
+    marker = tmp_path / "builder-ran.txt"
+    task = inline()
+    payload = json.dumps({
+        "actions": [],
+        "evidence": [{"kind": "diff", "text": "d"}, {"kind": "test_output", "text": "t"}],
+    })
+    task["builder"] = {
+        "role": "builder",
+        "agent": "a1",
+        "command": ["bash", "-c", f"touch {marker}; printf '%s\n' {shlex.quote(payload)}"],
+    }
+    result = run_task(task, CONTRACTS, tmp_path)
+    assert rules(result) == {BOUNDARY}
+    assert result.violations[0].phase == "builder"
+    assert "bash" in result.violations[0].message
+    assert not marker.exists()
+
+
+def test_disallowed_verifier_phase_command_does_not_execute(tmp_path):
+    marker = tmp_path / "verifier-ran.txt"
+    task = inline()
+    payload = json.dumps({
+        "actions": [],
+        "evidence": [{"kind": "test_output", "text": "t"}],
+        "verdict": "pass",
+    })
+    task["verifier"] = {
+        "role": "verifier",
+        "agent": "a2",
+        "command": ["bash", "-c", f"touch {marker}; printf '%s\n' {shlex.quote(payload)}"],
+    }
+    result = run_task(task, CONTRACTS, tmp_path)
+    assert rules(result) == {BOUNDARY}
+    assert result.violations[0].phase == "verifier"
+    assert "bash" in result.violations[0].message
+    assert not marker.exists()
+
+
+def test_allowed_builder_phase_command_still_executes(tmp_path):
+    script = tmp_path / "builder.py"
+    script.write_text(
+        "import json\n"
+        "print(json.dumps({"
+        "'actions': [], "
+        "'evidence': [{'kind':'diff','text':'d'}, {'kind':'test_output','text':'t'}]"
+        "}))\n"
+    )
+    task = inline()
+    task["builder"] = {"role": "builder", "agent": "a1", "command": [sys.executable, "builder.py"]}
+    result = run_task(task, CONTRACTS, tmp_path)
+    assert result.accepted, [str(v) for v in result.violations]
 
 
 def test_boundary_observed_undeclared_write(tmp_path):

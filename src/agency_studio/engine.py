@@ -315,6 +315,14 @@ def run_task(task: dict, contracts: dict[str, Contract], base_dir: Path) -> RunR
         shutil.copytree(workdir, root, ignore=shutil.ignore_patterns(*IGNORED_DIRS))
         reports = {}
         for phase, (spec, con) in phases.items():
+            cmd = spec.get("command")
+            if "report" not in spec and isinstance(cmd, list) and cmd and all(isinstance(c, str) for c in cmd):
+                tool = _tool_name(cmd[0])
+                if tool not in con.allow_tools:
+                    result.violations.append(
+                        Violation(BOUNDARY, phase, f"role '{con.name}' may not run tool '{tool}' (not in allow_tools)")
+                    )
+                    return result
             report, observed = execute_phase(spec, root, phase)
             reports[phase] = report
             declared = report.get("actions") or []
