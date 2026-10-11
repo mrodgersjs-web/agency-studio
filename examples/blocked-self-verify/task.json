@@ -1,0 +1,19 @@
+{
+  "task": "Add greeting(); the builder tries to verify its own work",
+  "workdir": "../pass",
+  "builder": {
+    "role": "builder",
+    "agent": "agent-alpha",
+    "command": [
+      "python3",
+      "builder_run.py"
+    ]
+  },
+  "verifier": {
+    "role": "verifier",
+    "agent": "agent-alpha",
+    "report": {
+      "verdict": "pass"
+    }
+  }
+}

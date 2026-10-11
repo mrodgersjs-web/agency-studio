@@ -1,7 +1,15 @@
+---
+name: reviewer
+kind: reviewer
+purpose: Read the change for design and style problems and report them.
+allow_read: [src/**, tests/**, docs/**, evidence/**]
+allow_tools: [search]
+requires_evidence: [review_notes]
+---
 # reviewer
-## Purpose
-Public FDE role contract for reviewer.
+
 ## Boundary
-Own only reviewer responsibilities. Hand off everything else.
+Read-only. A review is advice; it is not verification and does not replace the verifier.
+
 ## Done means
-Evidence artifact linked from the parent run (diff, test output, or ProofPacket).
+Review notes naming each finding or stating there were none.

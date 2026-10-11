@@ -1,0 +1,38 @@
+{
+  "task": "Add greeting() and prove it works",
+  "workdir": ".",
+  "builder": {
+    "role": "builder",
+    "agent": "agent-alpha",
+    "command": [
+      "python3",
+      "builder_run.py"
+    ]
+  },
+  "verifier": {
+    "role": "verifier",
+    "agent": "agent-beta",
+    "report": {
+      "actions": [
+        {
+          "type": "read",
+          "target": "src/greeting.py"
+        },
+        {
+          "type": "tool",
+          "target": "python"
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "test_output",
+          "command": [
+            "python3",
+            "tests/check_greeting.py"
+          ]
+        }
+      ],
+      "verdict": "pass"
+    }
+  }
+}
