@@ -50,6 +50,7 @@ class Violation:
 class RunResult:
     task: str
     violations: list[Violation] = field(default_factory=list)
+    evidence_log: list[dict] = field(default_factory=list)
 
     @property
     def accepted(self) -> bool:
@@ -60,6 +61,7 @@ class RunResult:
             "task": self.task,
             "result": "ACCEPTED" if self.accepted else "REJECTED",
             "violations": [vars(v) for v in self.violations],
+            "evidence_log": self.evidence_log,
         }
 
 
@@ -136,27 +138,90 @@ def snapshot(root: Path) -> dict[str, str]:
     return snap
 
 
-def check_evidence(contract: Contract, report: dict, root: Path, phase: str) -> list[Violation]:
+def _tool_name(exe: str) -> str:
+    """Basename without version suffix: /x/bin/python3.12 -> python."""
+    return re.sub(r"[\d.]+$", "", exe.rsplit("/", 1)[-1])
+
+
+def run_evidence_command(
+    item: dict, contract: Contract, root: Path, phase: str, log: list[dict]
+) -> tuple[str | None, list[Violation]]:
+    """Execute an evidence command ourselves. Returns (problem or None, violations)."""
+    cmd = item.get("command")
+    if not (isinstance(cmd, list) and cmd and all(isinstance(c, str) and c for c in cmd)):
+        return "command must be a non-empty list of strings", []
+    tool = _tool_name(cmd[0])
+    if tool not in contract.allow_tools:
+        return f"tool '{tool}' not allowed", [
+            Violation(BOUNDARY, phase, f"role '{contract.name}' may not run tool '{tool}' (not in allow_tools)")
+        ]
+    before = snapshot(root)
+    try:
+        proc = subprocess.run(cmd, check=False, cwd=root, capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return f"command could not run: {exc}", []
+    after = snapshot(root)
+    changed = [f for f in after if before.get(f) != after[f]] + [f for f in before if f not in after]
+    violations = check_actions(contract, [{"type": "write", "target": f} for f in changed], phase)
+    log.append({
+        "phase": phase, "kind": item.get("kind"), "command": cmd, "exit_code": proc.returncode,
+        "output": (proc.stdout + proc.stderr)[-500:],
+    })
+    if proc.returncode != 0:
+        return f"command {' '.join(cmd)!r} exited {proc.returncode} (failing check)", violations
+    return None, violations
+
+
+def check_evidence(contract: Contract, report: dict, root: Path, phase: str, log: list[dict]) -> list[Violation]:
+    """Check required evidence. A verifier's evidence must be grounded (see _evidence_problem)."""
     out: list[Violation] = []
     items = report.get("evidence")
     if not isinstance(items, list):
         items = []
+    grounded = contract.kind == "verifier"
     by_kind: dict[str, list[dict]] = {}
     for item in items:
         if isinstance(item, dict) and isinstance(item.get("kind"), str):
             by_kind.setdefault(item["kind"], []).append(item)
     for kind in contract.requires_evidence:
-        good = [i for i in by_kind.get(kind, []) if _evidence_problem(i, root) is None]
-        if not good:
-            problems = [_evidence_problem(i, root) for i in by_kind.get(kind, [])]
+        problems = []
+        ok = False
+        for item in by_kind.get(kind, []):
+            if grounded and "command" in item:
+                problem, viol = run_evidence_command(item, contract, root, phase, log)
+                out += viol
+            else:
+                problem = _evidence_problem(item, root, grounded)
+            if problem is None:
+                ok = True
+            else:
+                problems.append(problem)
+        if not ok:
             detail = problems[0] if problems else "none provided"
             out.append(Violation(EVIDENCE, phase, f"required evidence '{kind}' missing: {detail}"))
+    if grounded:
+        # A "pass" is void if any evidence command the engine ran actually failed.
+        for entry in log:
+            if entry["phase"] == phase and entry["exit_code"] != 0 and report.get("verdict") == "pass":
+                out.append(Violation(
+                    VERDICT, phase, f"verdict 'pass' contradicts own evidence: {' '.join(entry['command'])!r} "
+                    f"exited {entry['exit_code']}"))
     return out
 
 
-def _evidence_problem(item: dict, root: Path) -> str | None:
+def _evidence_problem(item: dict, root: Path, grounded: bool = False) -> str | None:
+    """Static check of one non-command evidence item.
+
+    Builder evidence may be inline text or a file ref. Verifier evidence ("grounded") may not be
+    bare text: it must be a file ref whose sha256 the engine verifies, or a command the engine runs.
+    """
     ref, text = item.get("ref"), item.get("text")
-    if isinstance(text, str) and text.strip():
+    if grounded:
+        if not isinstance(ref, str) or not ref:
+            return "verifier evidence must be a command the engine runs or a file ref with sha256, not bare text"
+        if not item.get("sha256"):
+            return f"verifier file ref '{ref}' needs a sha256"
+    elif isinstance(text, str) and text.strip():
         return None
     if not isinstance(ref, str) or not ref:
         return "no ref or text"
@@ -256,8 +321,9 @@ def run_task(task: dict, contracts: dict[str, Contract], base_dir: Path) -> RunR
             if not isinstance(declared, list):
                 raise TaskError(f"{phase}: actions must be a list")
             result.violations += check_actions(con, declared + observed, phase)
-            result.violations += check_evidence(con, report, root, phase)
-        if not (_evidence_keys(reports["verifier"]) - _evidence_keys(reports["builder"])):
+            result.violations += check_evidence(con, report, root, phase, result.evidence_log)
+        ran = any(e["phase"] == "verifier" and e["exit_code"] == 0 for e in result.evidence_log)
+        if not ran and not (_evidence_keys(reports["verifier"]) - _evidence_keys(reports["builder"])):
             result.violations.append(
                 Violation(EVIDENCE, "verifier", "verifier evidence is identical to (or empty versus) the builder's")
             )

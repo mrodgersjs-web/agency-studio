@@ -8,8 +8,8 @@ A contract says what one role may read, write, run and do, and what evidence pro
 
 - the verifier is the builder's role or the same agent (self-verification),
 - anyone touches a file, tool or action outside their contract (boundary),
-- required evidence is missing, empty, tampered with or just copied from the builder (evidence),
-- the verifier's verdict is not `pass`.
+- required evidence is missing, empty, ungrounded (see below), fails its `sha256`, or is just the builder's own evidence reused (evidence),
+- the verifier's verdict is not `pass`, or is `pass` while a check the engine ran for it failed.
 
 ## Install and run
 
@@ -46,11 +46,21 @@ Six sample contracts live in [`roles/`](roles). Design notes: [docs/architecture
 
 ## Task format
 
-A task names a builder phase and a verifier phase, each with a `role`, an `agent` id and either an inline `report` or a `command` that prints a JSON report (`actions`, `evidence`, and for the verifier a `verdict`). See [`examples/`](examples). Commands run in a temporary copy of `workdir`, and undeclared file changes are detected and checked too.
+A task names a builder phase and a verifier phase, each with a `role`, an `agent` id and either an inline `report` or a `command` that prints a JSON report (`actions`, `evidence`, and for the verifier a `verdict`). See [`examples/`](examples); the passing example's verifier is an inline report whose evidence is a command the engine runs. Commands run in a temporary copy of `workdir`, and undeclared file changes are detected and checked too.
+
+## What the verifier must provide
+
+Every evidence kind in the verifier's `requires_evidence` needs at least one **grounded** item. Bare `text` is never accepted from a verifier. Grounded means one of:
+
+- `{"kind": "test_output", "command": ["python3", "tests/check.py"]}`: the **engine runs the command itself** in the temporary workdir copy, records the exit code and the last 500 characters of output (`--json` shows this as `evidence_log`), and accepts it only on exit 0. The executable must be in the verifier's `allow_tools`, and any file the command changes counts as a write (a verifier has none allowed).
+- `{"kind": "test_output", "ref": "path", "sha256": "<hex>"}`: a file that exists, is not empty and whose sha256 the engine recomputes. The `sha256` is mandatory for a verifier. The engine checks integrity only; it does not read the file for pass or fail.
+
+The verifier must also return `"verdict": "pass"`. A `pass` is rejected if any command the engine ran for it exited non-zero. A verifier that only reuses the builder's file evidence, with no command of its own, is rejected.
 
 ## Limits
 
 - Agent identity is the id the task declares; the engine cannot prove two ids are different models.
+- The verdict is self-reported; the engine checks it against the evidence it executed or hashed, not against the task's intent. File refs are integrity-checked, not interpreted. Builder evidence may still be inline text or an unhashed file ref; the independent verifier is what must ground it.
 - Only file changes in the workdir are observed. Network and process side effects are not.
 
 ## Roadmap
