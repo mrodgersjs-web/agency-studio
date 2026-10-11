@@ -1,74 +1,67 @@
 # agency-studio
 
-> Department-shaped agent teams with hard boundaries — specialization, ownership, and handoff contracts.
-**Outcome:** Smoke reports `"result": "PASS"` with `"ok": true`, `subsystem_count: 17`, `registry_populated: true`, `version_ok: true` across 6 defined roles.
+![agency-studio](assets/agency-studio-hero.png)
 
+Agent role contracts written as markdown, with a validator and an engine that enforces **Builder-Verifier separation**.
 
-## Employer summary
+A contract says what one role may read, write, run and do, and what evidence proves its work is done. The engine runs a task through a Builder and then an independent Verifier and **rejects** the run when:
 
-Staff AI work without god-objects. Each role owns one purpose; **Builder ≠ Verifier**.
+- the verifier is the builder's role or the same agent (self-verification),
+- anyone touches a file, tool or action outside their contract (boundary),
+- required evidence is missing, empty, tampered with or just copied from the builder (evidence),
+- the verifier's verdict is not `pass`.
 
-## Proof in 60 seconds
+## Install and run
 
 ```bash
-git clone https://github.com/mrodgersjs-web/agency-studio.git
-cd agency-studio
-bash scripts/smoke.sh
-sed -n '1,40p' roles/verifier.md
+pip install -e '.[dev]'
+agency-studio validate roles                       # check all contracts
+agency-studio roles                                # list them
+agency-studio run examples/pass/task.json          # ACCEPTED, exit 0
+agency-studio run examples/blocked-self-verify/task.json   # REJECTED, exit 1
+bash scripts/smoke.sh                              # the same, as the CI smoke
+pytest -q && ruff check src tests
 ```
 
-## Roles
-Scout · Planner · Builder · Reviewer · Verifier · Documenter — see `roles/`.
+Exit codes for `run`: 0 accepted, 1 rejected, 2 bad input (unreadable task, unknown role, invalid contract).
 
-## Public boundary
-See [docs/public-boundary.md](docs/public-boundary.md).
+## Contract format
+
+```markdown
+---
+name: verifier
+kind: verifier            # scout|planner|builder|reviewer|verifier|documenter
+purpose: Independently re-run the checks.
+allow_read: [src/**, tests/**, evidence/**]
+allow_write: []           # verifiers must be read-only
+allow_tools: [python, pytest]
+allow_actions: []
+cannot_verify: []         # optional: roles this role may never verify
+requires_evidence: [test_output]
+---
+Free-form markdown body.
+```
+
+Six sample contracts live in [`roles/`](roles). Design notes: [docs/architecture.md](docs/architecture.md).
+
+## Task format
+
+A task names a builder phase and a verifier phase, each with a `role`, an `agent` id and either an inline `report` or a `command` that prints a JSON report (`actions`, `evidence`, and for the verifier a `verdict`). See [`examples/`](examples). Commands run in a temporary copy of `workdir`, and undeclared file changes are detected and checked too.
+
+## Limits
+
+- Agent identity is the id the task declares; the engine cannot prove two ids are different models.
+- Only file changes in the workdir are observed. Network and process side effects are not.
+
+## Roadmap
+
+- Roles beyond builder and verifier (planner, reviewer, documenter) have contracts, but the engine runs only the Builder-Verifier pair.
+- Multi-step handoff chains with more than two phases.
+- MCP server (`mcp/server.py`) is a separate results wrapper and is not part of the enforcement engine.
+- Network and process side-effect observation.
 
 ## Related
 - [jake-studio](https://github.com/mrodgersjs-web/jake-studio) · [doctrine](https://github.com/mrodgersjs-web/doctrine) · [proof-studio](https://github.com/mrodgersjs-web/proof-studio)
 
-
----
-
-
-
-## Video walkthrough
-
-- Script: [`docs/video-script.md`](docs/video-script.md)
-- Recording: [`assets/demo.mp4`](assets/demo.mp4) (75s captioned)
-- Preview: [`assets/demo.gif`](assets/demo.gif)
-
-![demo preview](assets/demo.gif)
-
-## FDE bar (this studio)
-
-| Practice | Here |
-| --- | --- |
-| Employer summary | top of README |
-| 60s / smoke proof | {
-  "checks": {
-    "registry_populated": true,
-    "subsystem_count": 17,
-    "version_ok": true
-  },
-  "ok": true,
-  "result": "PASS",
-  "rig_master": "1.0.0",
-  "verb": "smoke"
-}
-mesh-studio smoke PASS |
-| Public boundary |  |
-| Claim under test | '"role contracts present"' |
-| Related fleet | [profile](https://github.com/mrodgersjs-web) · [resume](https://github.com/mrodgersjs-web/resume) · [patents teaser](https://github.com/mrodgersjs-web/patents) |
-
-If {
-  "checks": {
-    "registry_populated": true,
-    "subsystem_count": 17,
-    "version_ok": true
-  },
-  "ok": true,
-  "result": "PASS",
-  "rig_master": "1.0.0",
-  "verb": "smoke"
-}
-mesh-studio smoke PASS fails, the README claim is considered false until fixed.
+## Public boundary
+See [docs/public-boundary.md](docs/public-boundary.md). Video walkthrough script: [docs/video-script.md](docs/video-script.md).

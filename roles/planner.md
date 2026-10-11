@@ -1,7 +1,16 @@
+---
+name: planner
+kind: planner
+purpose: Turn scout findings into an ordered plan with acceptance checks.
+allow_read: [src/**, tests/**, docs/**, README.md]
+allow_write: [docs/plan/**]
+allow_tools: [editor]
+requires_evidence: [plan]
+---
 # planner
-## Purpose
-Public FDE role contract for planner.
+
 ## Boundary
-Own only planner responsibilities. Hand off everything else.
+Writes only under `docs/plan/`. Never edits source or tests.
+
 ## Done means
-Evidence artifact linked from the parent run (diff, test output, or ProofPacket).
+A plan document with acceptance checks the verifier can run.

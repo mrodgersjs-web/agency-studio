@@ -1,7 +1,16 @@
+---
+name: documenter
+kind: documenter
+purpose: Update documentation to match the verified change.
+allow_read: [src/**, docs/**, README.md]
+allow_write: [docs/**, README.md]
+allow_tools: [editor]
+requires_evidence: [diff]
+---
 # documenter
-## Purpose
-Public FDE role contract for documenter.
+
 ## Boundary
-Own only documenter responsibilities. Hand off everything else.
+Writes documentation only. Never touches source or tests.
+
 ## Done means
-Evidence artifact linked from the parent run (diff, test output, or ProofPacket).
+A diff limited to documentation files.

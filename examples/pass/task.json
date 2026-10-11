@@ -1,0 +1,6 @@
+{
+  "task": "Add greeting() and prove it works",
+  "workdir": ".",
+  "builder": {"role": "builder", "agent": "agent-alpha", "command": ["python3", "builder_run.py"]},
+  "verifier": {"role": "verifier", "agent": "agent-beta", "command": ["python3", "verifier_run.py"]}
+}
