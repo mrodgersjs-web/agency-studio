@@ -1,4 +1,4 @@
-# Evaluation strategy — Agency Studio
+# Evaluation strategy for Agency Studio
 
 ## Gates
 | Gate | Command | Pass |

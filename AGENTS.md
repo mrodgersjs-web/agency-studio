@@ -1,4 +1,4 @@
-# AGENTS.md — agency-studio
+# AGENTS.md: agency-studio
 Never combine Builder and Verifier. Role files are contracts.
 
 ## RIG lattice contract (stamped)
