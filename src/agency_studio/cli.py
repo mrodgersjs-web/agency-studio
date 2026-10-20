@@ -10,6 +10,7 @@ from pathlib import Path
 from . import __version__
 from .contract import ContractError, load_contract, load_contracts
 from .engine import TaskError, load_task, run_task
+from .schema import schema_as_dict
 
 
 def _validate(args) -> int:
@@ -48,6 +49,11 @@ def _run(args) -> int:
     return 0 if result.accepted else 1
 
 
+def _schema(_args) -> int:
+    print(json.dumps(schema_as_dict(), indent=2))
+    return 0
+
+
 def _roles(args) -> int:
     try:
         for c in load_contracts(args.roles).values():
@@ -70,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--roles", default="roles", help="contracts directory (default: roles)")
     p.add_argument("--json", action="store_true")
     p.set_defaults(fn=_run)
+    p = sub.add_parser("schema", help="print the contract schema as JSON")
+    p.set_defaults(fn=_schema)
     p = sub.add_parser("roles", help="list contracts")
     p.add_argument("--roles", default="roles")
     p.set_defaults(fn=_roles)
