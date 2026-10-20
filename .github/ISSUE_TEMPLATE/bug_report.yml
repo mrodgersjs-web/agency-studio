@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a defect in the validator, CLI, or a bundled contract.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what you saw.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `pip show agency-studio` or the git commit.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Contract text (if relevant)
+      description: Paste the contract that failed validation.
