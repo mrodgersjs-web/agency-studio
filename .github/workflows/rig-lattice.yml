@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   lattice:
+    timeout-minutes: 15
     # The rig-lattice scorer is not on PyPI yet (pip install returns 404), so this
     # job failed on every push since 2026-09-12. It now skips instead of failing.
     # To turn it back on once the scorer is installable, set the repository

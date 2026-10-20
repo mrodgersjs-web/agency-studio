@@ -24,7 +24,7 @@ pip install -e '.[dev]'
 agency-studio validate roles                       # 6 contracts valid
 agency-studio run examples/pass/task.json          # ACCEPTED, exit 0
 agency-studio run examples/blocked-self-verify/task.json   # REJECTED, exit 1
-pytest -q                                          # 52 tests
+pytest -q                                          # 56 tests
 ```
 
 ## Usage
@@ -133,4 +133,4 @@ integrity-checked, not interpreted. Only workdir file changes are observed;
 network and process side effects are not. The MCP wrapper in `mcp/` is separate
 from the enforcement engine.
 
-Built by Mike Rodgers · [rodgersintelligence.com](https://rodgersintelligence.com/)
+Built by Mike Rodgers · rodgersintelligence.com
